@@ -92,7 +92,7 @@ And you can find full example code in [example page](https://pub.dev/packages/fl
        key: ObjectKey(list[index]),
  
        ///this is the same as iOS native
-       performsFirstActionWithFullSwipe: true,
+       leftPerformsFirstActionWithFullSwipe: true,
        trailingActions: <SwipeAction>[
          SwipeAction(
              title: "delete",
@@ -117,7 +117,7 @@ And you can find full example code in [example page](https://pub.dev/packages/fl
  ```dart
 SwipeActionCell(
       key: ObjectKey(list[index]),
-      performsFirstActionWithFullSwipe: true,
+      leftPerformsFirstActionWithFullSwipe: true,
       trailingActions: <SwipeAction>[
         SwipeAction(
             title: "delete",
@@ -150,7 +150,7 @@ SwipeActionCell(
 SwipeActionCell(
       key: ObjectKey(list[index]),
 
-      performsFirstActionWithFullSwipe: true,
+      leftPerformsFirstActionWithFullSwipe: true,
       trailingActions: <SwipeAction>[
         SwipeAction(
             title: "delete",
@@ -203,7 +203,7 @@ SwipeActionCell(
 ```dart
 return SwipeActionCell(
       key: ValueKey(list[index]),
-      performsFirstActionWithFullSwipe: true,
+      leftPerformsFirstActionWithFullSwipe: true,
       trailingActions: <SwipeAction>[
         SwipeAction(
           ///
@@ -294,7 +294,7 @@ ListView.builder(
        controller: controller,
        ///index is required if you want to enter edit mode
        index: index,
-       performsFirstActionWithFullSwipe: true,
+       leftPerformsFirstActionWithFullSwipe: true,
        key: ValueKey(list[index]),
        trailingActions: [
          SwipeAction(

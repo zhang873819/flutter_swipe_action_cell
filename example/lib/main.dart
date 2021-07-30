@@ -182,7 +182,8 @@ class _SwipeActionPageState extends State<SwipeActionPage> {
       ///animation default value below...
       normalAnimationDuration: 500,
       deleteAnimationDuration: 400,
-      performsFirstActionWithFullSwipe: true,
+      leftPerformsFirstActionWithFullSwipe: true,
+      rightPerformsFirstActionWithFullSwipe: true,
       trailingActions: [
         SwipeAction(
             title: "delete",

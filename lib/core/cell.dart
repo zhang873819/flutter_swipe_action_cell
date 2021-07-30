@@ -36,7 +36,9 @@ class SwipeActionCell extends StatefulWidget {
   ///def value = false
   ///就像iOS一样，往左拉满会直接删除一样,拉满后会执行第一个 [SwipeAction] 的onTap方法
   ///默认为false
-  final bool performsFirstActionWithFullSwipe;
+  final bool leftPerformsFirstActionWithFullSwipe;
+
+  final bool rightPerformsFirstActionWithFullSwipe;
 
   ///When deleting the cell
   ///the first action will cover all content size with animation.(emm.. just like iOS native effect)
@@ -75,9 +77,9 @@ class SwipeActionCell extends StatefulWidget {
   final double editModeOffset;
 
   ///The factor describing how far the cell need to be swiped, for swipe to be considered "full"
-  ///only valid when [performsFirstActionWithFullSwipe] = true
+  ///only valid when [leftPerformsFirstActionWithFullSwipe] = true
   ///当拖动到cell宽度 * fullSwipeFactor 的这个距离时，将会触发第一个按钮的事件
-  ///注意：[performsFirstActionWithFullSwipe] 为true的时候此参数才有效
+  ///注意：[leftPerformsFirstActionWithFullSwipe] 为true的时候此参数才有效
   ///def value = 0.75
   final double fullSwipeFactor;
 
@@ -96,7 +98,8 @@ class SwipeActionCell extends StatefulWidget {
     this.leadingActions,
     this.isDraggable = true,
     this.closeWhenScrolling = true,
-    this.performsFirstActionWithFullSwipe = false,
+    this.leftPerformsFirstActionWithFullSwipe = false,
+    this.rightPerformsFirstActionWithFullSwipe = false,
     this.firstActionWillCoverAllSpaceOnDeleting = true,
     this.controller,
     this.index,
@@ -433,7 +436,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
         currentOffset.dx <= 0.0) {
       return;
     }
-    if (widget.performsFirstActionWithFullSwipe) {
+    if (widget.leftPerformsFirstActionWithFullSwipe || widget.rightPerformsFirstActionWithFullSwipe) {
       _updateWithFullDraggableEffect(details);
     } else {
       _updateWithNormalEffect(details);
@@ -443,8 +446,8 @@ class SwipeActionCellState extends State<SwipeActionCell>
   void _updateWithFullDraggableEffect(DragUpdateDetails details) {
     currentOffset += Offset(details.delta.dx, 0);
 
-    ///set performsFirstActionWithFullSwipe
-    if (widget.performsFirstActionWithFullSwipe) {
+    ///set leftPerformsFirstActionWithFullSwipe
+    if (widget.leftPerformsFirstActionWithFullSwipe || widget.rightPerformsFirstActionWithFullSwipe) {
       if (currentOffset.dx.abs() > widget.fullSwipeFactor * width) {
         if (!lastItemOut) {
           SwipeActionStore.getInstance()
@@ -523,7 +526,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
   void _onHorizontalDragEnd(DragEndDetails details) async {
     if (editing) return;
 
-    if (lastItemOut && widget.performsFirstActionWithFullSwipe) {
+    if (lastItemOut && (widget.leftPerformsFirstActionWithFullSwipe || widget.rightPerformsFirstActionWithFullSwipe)) {
       CompletionHandler completionHandler = (delete) async {
         if (delete) {
           SwipeActionStore.getInstance()
@@ -546,9 +549,9 @@ class SwipeActionCellState extends State<SwipeActionCell>
         }
       };
 
-      if (whenTrailingActionShowing && widget.trailingActions != null) {
+      if (whenTrailingActionShowing && widget.rightPerformsFirstActionWithFullSwipe && widget.trailingActions != null) {
         await widget.trailingActions?[0].onTap.call(completionHandler);
-      } else if (whenLeadingActionShowing && widget.leadingActions != null) {
+      } else if (whenLeadingActionShowing && widget.leftPerformsFirstActionWithFullSwipe && widget.leadingActions != null) {
         await widget.leadingActions?[0].onTap.call(completionHandler);
       }
     } else {
@@ -819,7 +822,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
       final actualIndex = leadingActionsCount - 1 - index;
       if (widget.leadingActions!.length == 1 &&
           !widget.leadingActions![0].forceAlignmentToBoundary &&
-          widget.performsFirstActionWithFullSwipe) {
+          widget.leftPerformsFirstActionWithFullSwipe) {
         return SwipePullAlignButton(actionIndex: actualIndex, trailing: false);
       } else {
         return SwipePullButton(actionIndex: actualIndex, trailing: false);
@@ -827,7 +830,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
     });
 
     return SwipeData(
-      willPull: lastItemOut && widget.performsFirstActionWithFullSwipe,
+      willPull: lastItemOut && widget.leftPerformsFirstActionWithFullSwipe,
       firstActionWillCoverAllSpaceOnDeleting:
           widget.firstActionWillCoverAllSpaceOnDeleting,
       parentKey: widget.key!,
@@ -836,7 +839,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
       contentWidth: width,
       contentHeight: height,
       currentOffset: currentOffset.dx,
-      fullDraggable: widget.performsFirstActionWithFullSwipe,
+      fullDraggable: widget.leftPerformsFirstActionWithFullSwipe,
       parentState: this,
       child: SizedBox(
         height: height,
@@ -857,7 +860,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
       final actualIndex = trailingActionsCount - 1 - index;
       if (trailingActionsCount == 1 &&
           !widget.trailingActions![0].forceAlignmentToBoundary &&
-          widget.performsFirstActionWithFullSwipe) {
+          widget.rightPerformsFirstActionWithFullSwipe) {
         return SwipePullAlignButton(actionIndex: actualIndex, trailing: true);
       } else {
         return SwipePullButton(actionIndex: actualIndex, trailing: true);
@@ -865,7 +868,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
     });
 
     return SwipeData(
-      willPull: lastItemOut && widget.performsFirstActionWithFullSwipe,
+      willPull: lastItemOut && widget.rightPerformsFirstActionWithFullSwipe,
       firstActionWillCoverAllSpaceOnDeleting:
           widget.firstActionWillCoverAllSpaceOnDeleting,
       parentKey: widget.key!,
@@ -874,7 +877,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
       contentWidth: width,
       contentHeight: height,
       currentOffset: currentOffset.dx,
-      fullDraggable: widget.performsFirstActionWithFullSwipe,
+      fullDraggable: widget.rightPerformsFirstActionWithFullSwipe,
       parentState: this,
       child: SizedBox(
         height: height,
