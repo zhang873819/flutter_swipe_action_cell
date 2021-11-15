@@ -179,6 +179,8 @@ class SwipeActionCellState extends State<SwipeActionCell>
 
   int get leadingActionsCount => widget.leadingActions?.length ?? 0;
 
+  final cellStateInfo = _CellStateInfo();
+
   @override
   void initState() {
     super.initState();
@@ -221,11 +223,11 @@ class SwipeActionCellState extends State<SwipeActionCell>
     animation =
         Tween<double>(begin: currentOffset.dx, end: widget.editModeOffset)
             .animate(editCurvedAnim)
-              ..addListener(() {
-                if (lockAnim) return;
-                currentOffset = Offset(animation.value, 0);
-                setState(() {});
-              });
+          ..addListener(() {
+            if (lockAnim) return;
+            currentOffset = Offset(animation.value, 0);
+            setState(() {});
+          });
     editController.forward();
   }
 
@@ -236,11 +238,11 @@ class SwipeActionCellState extends State<SwipeActionCell>
     widget.controller?.selectedSet.remove(widget.index);
     animation = Tween<double>(begin: widget.editModeOffset, end: 0)
         .animate(editCurvedAnim)
-          ..addListener(() {
-            if (lockAnim) return;
-            currentOffset = Offset(animation.value, 0);
-            setState(() {});
-          });
+      ..addListener(() {
+        if (lockAnim) return;
+        currentOffset = Offset(animation.value, 0);
+        setState(() {});
+      });
     editController.forward();
   }
 
@@ -606,11 +608,11 @@ class SwipeActionCellState extends State<SwipeActionCell>
     final endOffset = trailing ? -offsetX : offsetX;
     animation = Tween<double>(begin: currentOffset.dx, end: endOffset)
         .animate(curveAnim)
-          ..addListener(() {
-            if (lockAnim) return;
-            this.currentOffset = Offset(animation.value, 0);
-            setState(() {});
-          });
+      ..addListener(() {
+        if (lockAnim) return;
+        this.currentOffset = Offset(animation.value, 0);
+        setState(() {});
+      });
     adjustOffsetAnimController.forward().whenCompleteOrCancel(() {
       adjustOffsetAnimController.dispose();
     });
@@ -623,11 +625,11 @@ class SwipeActionCellState extends State<SwipeActionCell>
               begin: currentOffset.dx,
               end: trailing ? -maxTrailingPullWidth : maxLeadingPullWidth)
           .animate(curvedAnim)
-            ..addListener(() {
-              if (lockAnim) return;
-              this.currentOffset = Offset(animation.value, 0);
-              setState(() {});
-            });
+        ..addListener(() {
+          if (lockAnim) return;
+          this.currentOffset = Offset(animation.value, 0);
+          setState(() {});
+        });
 
       controller.forward();
     } else {
@@ -706,44 +708,62 @@ class SwipeActionCellState extends State<SwipeActionCell>
 
     whenTrailingActionShowing = currentOffset.dx < 0;
     whenLeadingActionShowing = currentOffset.dx > 0;
+    cellStateInfo.isActionShowing =
+        whenTrailingActionShowing || whenLeadingActionShowing;
 
     return IgnorePointer(
       ignoring: ignorePointer,
       child: SizeTransition(
         sizeFactor: deleteCurvedAnim,
-        child: GestureDetector(
+        child: RawGestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: editing && !editController.isAnimating ||
-                  currentOffset.dx != 0.0
-              ? () {
-                  if (editing && !editController.isAnimating) {
-                    assert(
-                        widget.index != null,
-                        "From SwipeActionCell:\nIf you want to enter edit mode,please pass the 'index' parameter in SwipeActionCell\n"
-                        "=====================================================================================\n"
-                        "如果你要进入编辑模式，请在SwipeActionCell中传入index 参数，他的值就是你列表组件的itemBuilder中返回的index即可");
+          gestures: {
+            TapGestureRecognizer:
+                GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
+                    () => TapGestureRecognizer(), (instance) {
+              instance
+                ..onTap = editing && !editController.isAnimating ||
+                        currentOffset.dx != 0.0
+                    ? () {
+                        if (editing && !editController.isAnimating) {
+                          assert(
+                              widget.index != null,
+                              "From SwipeActionCell:\nIf you want to enter edit mode,please pass the 'index' parameter in SwipeActionCell\n"
+                              "=====================================================================================\n"
+                              "如果你要进入编辑模式，请在SwipeActionCell中传入index 参数，他的值就是你列表组件的itemBuilder中返回的index即可");
 
-                    if (selected) {
-                      widget.controller?.selectedSet.remove(widget.index);
-                      _updateControllerSelectedIndexChangedCallback(
-                          selected: false);
-                    } else {
-                      widget.controller?.selectedSet.add(widget.index!);
-                      _updateControllerSelectedIndexChangedCallback(
-                          selected: true);
-                    }
-                    setState(() {});
-                  } else if (currentOffset.dx != 0 && !controller.isAnimating) {
-                    closeWithAnim();
-                    _closeNestedAction();
-                  }
-                }
-              : null,
-          onHorizontalDragUpdate:
-              widget.isDraggable ? _onHorizontalDragUpdate : null,
-          onHorizontalDragStart:
-              widget.isDraggable ? _onHorizontalDragStart : null,
-          onHorizontalDragEnd: widget.isDraggable ? _onHorizontalDragEnd : null,
+                          if (selected) {
+                            widget.controller?.selectedSet.remove(widget.index);
+                            _updateControllerSelectedIndexChangedCallback(
+                                selected: false);
+                          } else {
+                            widget.controller?.selectedSet.add(widget.index!);
+                            _updateControllerSelectedIndexChangedCallback(
+                                selected: true);
+                          }
+                          setState(() {});
+                        } else if (currentOffset.dx != 0 &&
+                            !controller.isAnimating) {
+                          closeWithAnim();
+                          _closeNestedAction();
+                        }
+                      }
+                    : null;
+            }),
+            if (widget.isDraggable)
+              _DirectionDependentDragGestureRecognizer:
+                  GestureRecognizerFactoryWithHandlers<
+                          _DirectionDependentDragGestureRecognizer>(
+                      () => _DirectionDependentDragGestureRecognizer(
+                          cellStateInfo: cellStateInfo,
+                          canDragToLeft: hasTrailingAction,
+                          canDragToRight: hasLeadingAction), (instance) {
+                instance
+                  ..onStart = _onHorizontalDragStart
+                  ..onUpdate = _onHorizontalDragUpdate
+                  ..onEnd = _onHorizontalDragEnd;
+              }),
+          },
           child: DecoratedBox(
             position: DecorationPosition.foreground,
             decoration: BoxDecoration(
@@ -1049,4 +1069,31 @@ class SwipeNestedAction {
     this.curve = Curves.easeOutQuart,
     this.impactWhenShowing = false,
   });
+}
+
+class _DirectionDependentDragGestureRecognizer
+    extends HorizontalDragGestureRecognizer {
+  final bool canDragToLeft;
+  final bool canDragToRight;
+  final _CellStateInfo cellStateInfo;
+
+  _DirectionDependentDragGestureRecognizer(
+      {required this.cellStateInfo,
+      required this.canDragToLeft,
+      required this.canDragToRight});
+
+  @override
+  void handleEvent(PointerEvent event) {
+    final delta = event.delta.dx;
+    if (cellStateInfo.isActionShowing ||
+        canDragToLeft && delta < 0 ||
+        canDragToRight && delta > 0 ||
+        delta == 0) {
+      super.handleEvent(event);
+    }
+  }
+}
+
+class _CellStateInfo {
+  bool isActionShowing = false;
 }

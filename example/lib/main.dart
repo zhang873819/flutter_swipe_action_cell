@@ -209,7 +209,7 @@ class _SwipeActionPageState extends State<SwipeActionPage> {
       ],
       child: GestureDetector(
         onTap: () {
-          Scaffold.of(ctx)
+          ScaffoldMessenger.of(ctx)
             ..showSnackBar(SnackBar(
               content: Text(
                 'tap',
