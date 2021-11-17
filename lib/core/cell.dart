@@ -438,7 +438,8 @@ class SwipeActionCellState extends State<SwipeActionCell>
         currentOffset.dx <= 0.0) {
       return;
     }
-    if (widget.leftPerformsFirstActionWithFullSwipe || widget.rightPerformsFirstActionWithFullSwipe) {
+    final bool updateFull = (whenLeadingActionShowing && widget.leftPerformsFirstActionWithFullSwipe) || (whenTrailingActionShowing && widget.rightPerformsFirstActionWithFullSwipe);
+    if (updateFull) {
       _updateWithFullDraggableEffect(details);
     } else {
       _updateWithNormalEffect(details);
@@ -447,25 +448,22 @@ class SwipeActionCellState extends State<SwipeActionCell>
 
   void _updateWithFullDraggableEffect(DragUpdateDetails details) {
     currentOffset += Offset(details.delta.dx, 0);
-
-    ///set leftPerformsFirstActionWithFullSwipe
-    if (widget.leftPerformsFirstActionWithFullSwipe || widget.rightPerformsFirstActionWithFullSwipe) {
-      if (currentOffset.dx.abs() > widget.fullSwipeFactor * width) {
-        if (!lastItemOut) {
-          SwipeActionStore.getInstance()
-              .bus
-              .fire(PullLastButtonEvent(key: widget.key!, isPullingOut: true));
-          lastItemOut = true;
-          HapticFeedback.heavyImpact();
-        }
-      } else {
-        if (lastItemOut) {
-          SwipeActionStore.getInstance()
-              .bus
-              .fire(PullLastButtonEvent(key: widget.key!, isPullingOut: false));
-          lastItemOut = false;
-          HapticFeedback.heavyImpact();
-        }
+    
+    if (currentOffset.dx.abs() > widget.fullSwipeFactor * width) {
+      if (!lastItemOut) {
+        SwipeActionStore.getInstance()
+            .bus
+            .fire(PullLastButtonEvent(key: widget.key!, isPullingOut: true));
+        lastItemOut = true;
+        HapticFeedback.heavyImpact();
+      }
+    } else {
+      if (lastItemOut) {
+        SwipeActionStore.getInstance()
+            .bus
+            .fire(PullLastButtonEvent(key: widget.key!, isPullingOut: false));
+        lastItemOut = false;
+        HapticFeedback.heavyImpact();
       }
     }
 
