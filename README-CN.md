@@ -21,7 +21,7 @@
 #### pub 仓库点这里： [pub](https://pub.dev/packages/flutter_swipe_action_cell)
 #### 安装：
 ```yaml
-flutter_swipe_action_cell: ^2.1.2
+flutter_swipe_action_cell: ^2.2.1
 ```
 
  <br/>
@@ -327,9 +327,8 @@ ListView.builder(
 
  #### 根据gif图可以判断，删除逻辑应该是这样的：
  - 1.点击或者拉动到最后触发删除动作
- - 2.关闭cell的按钮
- - 3.请求服务器删除，服务器返回删除成功
- - 4.触发删除动画，更新UI
+ - 2.请求服务器删除，服务器返回删除成功
+ - 3.触发删除动画，更新UI
  
  那么对应的例子如下：
  
@@ -343,9 +342,7 @@ Widget _item(int index) {
             icon: Icon(Icons.add),
             title: "delete",
             onTap: (CompletionHandler handler) async {
-              ///先关闭cell
-              await handler(false);
-
+              
               ///利用延时模拟请求网络的过程
               await Future.delayed(Duration(seconds: 1));
 
@@ -485,7 +482,7 @@ onTap | 点击此action执行的动作|是
 title | action的文字 |否（不填就不显示文字）
 style | title的TextStyle|否（有一个默认样式）
 color | action拉出的背景颜色|否（def=Color.red)
-leftPadding | button的内容距离左边界的padding|否（def=15)
+performsFirstActionWithFullSwipe|拉满时执行第一个action|否（def=false)
 icon | action的图标|否（不填就不显示）
 closeOnTap | 点击此action是否关闭cell|否（def=true）
 backgroundRadius|拉出的button的左上和左下圆角大小|否（def=0.0）

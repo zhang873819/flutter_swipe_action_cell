@@ -1,10 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
 import 'events.dart';
@@ -91,6 +89,11 @@ class SwipeActionCell extends StatefulWidget {
   ///删除动画的执行时间。单位是毫秒
   final int deleteAnimationDuration;
 
+  ///The foreground color showing when the cell is selected in edit mode，def value is Colors.black.withAlpha(30)
+  ///当选中cell的时候的一个前景蒙版颜色，默认为Colors.black.withAlpha(30)
+  final Color? selectedForegroundColor;
+
+
   const SwipeActionCell({
     required Key key,
     required this.child,
@@ -115,7 +118,8 @@ class SwipeActionCell extends StatefulWidget {
     this.editModeOffset = 60,
     this.fullSwipeFactor = 0.75,
     this.deleteAnimationDuration = 400,
-    this.normalAnimationDuration = 500,
+    this.normalAnimationDuration = 400,
+     this.selectedForegroundColor,
   }) : super(key: key);
 
   ///About Key::::::
@@ -235,7 +239,6 @@ class SwipeActionCellState extends State<SwipeActionCell>
     lockAnim = true;
     editController.value = 0.0;
     lockAnim = false;
-    widget.controller?.selectedSet.remove(widget.index);
     animation = Tween<double>(begin: widget.editModeOffset, end: 0)
         .animate(editCurvedAnim)
       ..addListener(() {
@@ -307,6 +310,10 @@ class SwipeActionCellState extends State<SwipeActionCell>
         return;
       }
 
+      if (event.controller != widget.controller) {
+        return;
+      }
+
       if (event.trailing && !hasTrailingAction ||
           !event.trailing && !hasLeadingAction) {
         return;
@@ -335,6 +342,14 @@ class SwipeActionCellState extends State<SwipeActionCell>
         .bus
         .on<EditingModeEvent>()
         .listen((event) {
+      assert(
+          widget.controller != null,
+          "If you want to use edit mode,you must pass the "
+          "SwipeActionController to cell.\n"
+          "如果你要使用编辑模式必须给cell传入SwipeActionController");
+      if (event.controller != widget.controller) {
+        return;
+      }
       event.editing ? _startEditingWithAnim() : _stopEditingWithAnim();
     });
   }
@@ -395,6 +410,14 @@ class SwipeActionCellState extends State<SwipeActionCell>
             .bus
             .on<EditingModeEvent>()
             .listen((event) {
+          assert(
+              widget.controller != null,
+              "If you want to use edit mode,you must pass the "
+              "SwipeActionController to cell.\n"
+              "如果你要使用编辑模式必须给cell传入SwipeActionController");
+          if (event.controller != widget.controller) {
+            return;
+          }
           event.editing ? _startEditingWithAnim() : _stopEditingWithAnim();
         });
       }
@@ -413,7 +436,9 @@ class SwipeActionCellState extends State<SwipeActionCell>
   }
 
   void _scrollListener() {
-    if ((scrollPosition?.isScrollingNotifier.value ?? false) && !editing) {
+    final bool isScrolling = scrollPosition?.isScrollingNotifier.value ?? false;
+    final bool isCellOpening = currentOffset.dx != 0.0;
+    if (isCellOpening && isScrolling && !editing) {
       closeWithAnim();
       _closeNestedAction();
     }
@@ -448,7 +473,8 @@ class SwipeActionCellState extends State<SwipeActionCell>
 
   void _updateWithFullDraggableEffect(DragUpdateDetails details) {
     currentOffset += Offset(details.delta.dx, 0);
-    
+
+    ///set performsFirstActionWithFullSwipe
     if (currentOffset.dx.abs() > widget.fullSwipeFactor * width) {
       if (!lastItemOut) {
         SwipeActionStore.getInstance()
@@ -659,8 +685,10 @@ class SwipeActionCellState extends State<SwipeActionCell>
   }
 
   void _closeNestedAction() {
-    if (widget.trailingActions?.first.nestedAction != null ||
-        widget.leadingActions?.first.nestedAction != null) {
+    if (trailingActionsCount > 0 &&
+            widget.trailingActions?.first.nestedAction != null ||
+        leadingActionsCount > 0 &&
+            widget.leadingActions?.first.nestedAction != null) {
       SwipeActionStore.getInstance()
           .bus
           .fire(CloseNestedActionEvent(key: widget.key!));
@@ -696,7 +724,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
 
   @override
   Widget build(BuildContext context) {
-    editing = widget.controller != null && widget.controller!.isEditing;
+    editing = widget.controller != null && widget.controller!.isEditing.value;
 
     if (widget.controller != null) {
       selected = widget.controller!.selectedSet.contains(widget.index);
@@ -765,7 +793,10 @@ class SwipeActionCellState extends State<SwipeActionCell>
           child: DecoratedBox(
             position: DecorationPosition.foreground,
             decoration: BoxDecoration(
-              color: selected ? Colors.black.withAlpha(30) : Colors.transparent,
+              color: selected
+                  ? (widget.selectedForegroundColor ??
+                      Colors.black.withAlpha(30))
+                  : Colors.transparent,
             ),
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
@@ -774,7 +805,7 @@ class SwipeActionCellState extends State<SwipeActionCell>
                   alignment: Alignment.centerLeft,
                   children: <Widget>[
                     widget.controller != null &&
-                            (widget.controller!.isEditing ||
+                            (widget.controller!.isEditing.value ||
                                 editController.isAnimating)
                         ? _buildSelectedButton(selected)
                         : const SizedBox(),
@@ -976,6 +1007,15 @@ class SwipeAction {
   ///注意如果你设置了content，那么就不要设置title和icon，两个都必须为null
   final Widget? content;
 
+  ///Tip:It is ok to set this property only in first action.
+  ///When drag cell a long distance,it will be dismissed，
+  ///and it will execute the onTap  of the first [SwipeAction]
+  ///def value = false
+  ///这个属性设置给第一个action就好
+  ///就像iOS一样，往左拉满会直接删除一样,拉满后会执行第一个 [SwipeAction] 的onTap方法
+  ///默认为false
+  final bool performsFirstActionWithFullSwipe;
+
   const SwipeAction({
     required this.onTap,
     this.title,
@@ -988,6 +1028,7 @@ class SwipeAction {
     this.widthSpace = 80,
     this.nestedAction,
     this.content,
+    this.performsFirstActionWithFullSwipe = false,
   });
 }
 
