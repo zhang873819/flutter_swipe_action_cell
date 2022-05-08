@@ -1,3 +1,12 @@
+## [2.2.1] - Fix performance issue #44 (Avoid unnecessary rebuild all cells when scrolling).
+## [2.2.0] - Bug fix
+## [2.1.8] - Bug fix
+## [2.1.7] - [Breaking change] Change SwipeActionController isEditing from bool to ValueNotifier<bool>
+## [2.1.6] - Fix edit mode controller event identifier and add customized selectedForegroundColor
+## [2.1.5] - Fix #40 issue
+## [2.1.4] - Repair: open other controllers with the same index under multiple controllers
+## [2.1.3] - Breaking change! Make performsFirstActionWithFullSwipe can control leading or trailing actions separately
+## [2.1.3-beta] - Make performsFirstActionWithFullSwipe can control leading or trailing actions separately
 ## [2.1.2] - Simply format code
 ## [2.1.1] - Ignore drag gestures if no actions provided
 ## [2.1.0] - simple update

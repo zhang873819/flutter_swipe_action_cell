@@ -25,28 +25,36 @@ class SwipeActionController {
 
   /// edit mode or not
   ///获取是否正处于编辑模式
-  bool isEditing = false;
+  final ValueNotifier<bool> isEditing = ValueNotifier<bool>(false);
 
   ///start editing
   void startEditingMode() {
-    isEditing = true;
-    _fireEditEvent(editing: true);
+    if (isEditing.value) {
+      return;
+    }
+    isEditing.value = true;
+    _fireEditEvent(controller: this, editing: true);
   }
 
   ///stop editing
   void stopEditingMode() {
-    isEditing = false;
-    _fireEditEvent(editing: false);
+    if (!isEditing.value) {
+      return;
+    }
+    selectedIndexPathsChangeCallback?.call(List<int>.of(selectedSet), false, 0);
+    selectedSet.clear();
+    isEditing.value = false;
+    _fireEditEvent(controller: this, editing: false);
   }
 
   ///If it is editing,stop it.
   ///If it is not editing, start it
   void toggleEditingMode() {
-    if (isEditing) {
-      selectedIndexPathsChangeCallback?.call(selectedSet.toList(), false, 0);
+    if (isEditing.value) {
+      stopEditingMode();
+    } else {
+      startEditingMode();
     }
-    isEditing = !isEditing;
-    _fireEditEvent(editing: isEditing);
   }
 
   ///Get the list of selected cell 's index
@@ -79,10 +87,17 @@ class SwipeActionController {
   /// 1. 如果cell已经打开，那么什么都不会发生！！
   /// 2.你只能在同一时刻打开一个cell，当你调用此方法进行打开cell的时候，如果那个cell已经打开，则不会做任何事情
   /// 3.如果cell不在屏幕上，什么也不会发生！！
-  void openCellAt(
-      {required int index, required bool trailing, bool animated = true}) {
+  void openCellAt({
+    required int index,
+    required bool trailing,
+    bool animated = true,
+  }) {
     SwipeActionStore.getInstance().bus.fire(CellProgramOpenEvent(
-        index: index, trailing: trailing, animated: animated));
+          index: index,
+          trailing: trailing,
+          animated: animated,
+          controller: this,
+        ));
   }
 
   ///You can call this method to close all opening cell without passing controller into cell
@@ -100,7 +115,7 @@ class SwipeActionController {
   ///选中cell （注意！！！你必须把 index 参数传入cell
   void selectCellAt({required List<int> indexPaths}) {
     assert(
-        isEditing,
+        isEditing.value,
         "Please call method :selectCellAt(index)  when you are in edit mode\n"
         "请在编辑模式打开的情况下调用 selectCellAt(index)");
     indexPaths.forEach((element) {
@@ -115,7 +130,7 @@ class SwipeActionController {
   ///选中一个cell （注意！！！你必须把 index 参数传入cell
   void deselectCellAt({required List<int> indexPaths}) {
     assert(
-        isEditing,
+        isEditing.value,
         "Please call method :selectCellAt(index)  when you are in edit mode\n"
         "请在编辑模式打开的情况下调用 selectCellAt(index)");
 
@@ -131,7 +146,7 @@ class SwipeActionController {
   ///选择所有的cell
   void selectAll({required int dataLength}) {
     assert(
-        isEditing,
+        isEditing.value,
         "Please call method :selectCellAt(index)  when you are in edit mode\n"
         "请在编辑模式打开的情况下调用 selectCellAt(index)");
 
@@ -145,7 +160,7 @@ class SwipeActionController {
   ///取消选择所有的cell
   void deselectAll() {
     assert(
-        isEditing,
+        isEditing.value,
         "Please call method :selectCellAt(index)  when you are in edit mode\n"
         "请在编辑模式打开的情况下调用 selectCellAt(index)");
 
@@ -156,7 +171,10 @@ class SwipeActionController {
     SwipeActionStore.getInstance().bus.fire(CellSelectedEvent(selected: false));
   }
 
-  void _fireEditEvent({required bool editing}) {
-    SwipeActionStore.getInstance().bus.fire(EditingModeEvent(editing: editing));
+  void _fireEditEvent(
+      {required SwipeActionController controller, required bool editing}) {
+    SwipeActionStore.getInstance()
+        .bus
+        .fire(EditingModeEvent(controller: controller, editing: editing));
   }
 }
